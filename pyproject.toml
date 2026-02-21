@@ -1,0 +1,19 @@
+[project]
+name = "calories-bot"
+version = "0.1.0"
+description = "Get food from telegram bot and put calories to DB"
+authors = [
+    {name = "Vladimir Sumenko",email = "3760097@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10,<3.15"
+dependencies = [
+    "aiogram (>=3.25.0,<4.0.0)",
+    "asyncpg (>=0.31.0,<0.32.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
