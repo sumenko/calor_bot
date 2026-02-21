@@ -10,20 +10,39 @@ answer_to_queue
 # имя модуля во мн числе, кроме отдельных main config и тд
 
 import asyncio
+import asyncpg
+
 from datetime import datetime
-from aiogram import Bot, Dispatcher, typesпше
+from dotenv import load_dotenv
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import F
+import os
 
 # CalorGroupBot
 # calor_user_bot
 
-TOKEN = "8388031780:AAHloexGBB2lwQitxc2mX_rDA2cpieHU3Tc"
+load_dotenv()  # Загружаем переменные из .env
+
+TOKEN = os.getenv("BOT_TOKEN")
+
+DB_CONFIG = {
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME"),
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT")),
+}
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher()
 
+db_pool = None
+
+async def init_db():
+    global db_pool
+    db_pool = await asyncpg.create_pool(**DB_CONFIG)
 
 # Функция для команд (все что начинается с "/")
 async def handle_command(user_id: int, text: str, timestamp: datetime):
@@ -48,6 +67,7 @@ async def message_router(message: Message):
 
 
 async def main():
+    await init_db()
     await dp.start_polling(bot)
 
 
