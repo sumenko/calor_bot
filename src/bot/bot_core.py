@@ -11,14 +11,15 @@ answer_to_queue
 
 import asyncio
 import asyncpg
-
-from datetime import datetime
+from asyncpg.exceptions import DataError
+from datetime import datetime, timezone
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import F
 import os
+import pytz
 
 # CalorGroupBot
 # calor_user_bot
@@ -44,26 +45,84 @@ async def init_db():
     global db_pool
     db_pool = await asyncpg.create_pool(**DB_CONFIG)
 
-# Функция для команд (все что начинается с "/")
-async def handle_command(user_id: int, text: str, timestamp: datetime):
-    print(f"[COMMAND] User: {user_id}, Text: {text} Time: {timestamp}")
+    async with db_pool.acquire() as conn:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS allowed_users (
+                user_id INT8 PRIMARY KEY,
+                timezone TEXT            
+            );
+        """)
+
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS messages (
+                id SERIAL PRIMARY KEY,
+                user_id BIGINT,
+                username TEXT,
+                text TEXT,
+                is_command BOOLEAN,
+                created_at TIMESTAMP
+            );
+        """)
+
+async def is_user_allowed(user_id: int) -> bool:
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            "SELECT user_id FROM allowed_users WHERE user_id = $1",
+            user_id
+        )
+        return row is not None
 
 
-# Функция для обычных сообщений
-async def handle_text(user_id: int, text: str, timestamp: datetime):
-    print(f"[TEXT] User: {user_id}, Text: {text} Time: {timestamp}")
+async def save_message(user_id: int, username: str, text: str, is_command: bool, timestamp: datetime):
+    try:
+        async with db_pool.acquire() as conn:
+            await conn.execute("""
+                INSERT INTO messages (user_id, username, text, is_command, created_at)
+                VALUES ($1, $2, $3, $4, $5)
+            """, user_id, username, text, is_command, timestamp)
+    except DataError as e:
+        print('Error', e)
+
+
+@dp.message()
+async def message_router(message: Message):
+    if not message.text:
+        return
+
+    user_id = message.from_user.id
+    username = message.from_user.username
+    text = message.text
+    timestamp = message.date.replace(tzinfo=None)
+    
+    is_command = text.startswith("/")
+
+    if not await is_user_allowed(user_id):
+        await message.reply(f"⛔ @{username}:{user_id} У вас нет доступа.")
+        return
+    await save_message(user_id, username, text, is_command, timestamp)
+
+    await message.reply(f"Записано ✅")
+
+# # Функция для команд (все что начинается с "/")
+# async def handle_command(user_id: int, text: str, timestamp: datetime):
+#     print(f"[COMMAND] User: {user_id}, Text: {text} Time: {timestamp}")
+
+
+# # Функция для обычных сообщений
+# async def handle_text(user_id: int, text: str, timestamp: datetime):
+#     print(f"[TEXT] User: {user_id}, Text: {text} Time: {timestamp}")
 
 
 # Обработчик всех сообщений
-@dp.message()
-async def message_router(message: Message):
-    user_id = message.from_user.id
-    timestamp = message.date
-    text = message.text or ""
-    if text.startswith("/"):
-        await handle_command(user_id, text, timestamp)
-    else:
-        await handle_text(user_id, text, timestamp)
+# @dp.message()
+# async def message_router(message: Message):
+#     user_id = message.from_user.id
+#     timestamp = message.date
+#     text = message.text or ""
+#     if text.startswith("/"):
+#         await handle_command(user_id, text, timestamp)
+#     else:
+#         await handle_text(user_id, text, timestamp)
 
 
 async def main():
@@ -72,4 +131,5 @@ async def main():
 
 
 if __name__ == "__main__":
+
     asyncio.run(main())
