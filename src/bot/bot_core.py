@@ -9,10 +9,11 @@ answer_to_queue
 # имя класса в единственном числе
 # имя модуля во мн числе, кроме отдельных main config и тд
 
+from pathlib import Path
 import asyncio
 import asyncpg
 from asyncpg.exceptions import DataError
-from datetime import datetime, timezone
+from datetime import datetime as dt
 from dotenv import load_dotenv
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart
@@ -73,7 +74,7 @@ async def is_user_allowed(user_id: int) -> bool:
         return row is not None
 
 
-async def save_message(user_id: int, username: str, text: str, is_command: bool, timestamp: datetime):
+async def save_message(user_id: int, username: str, text: str, is_command: bool, timestamp: dt):
     try:
         async with db_pool.acquire() as conn:
             await conn.execute("""
@@ -82,6 +83,26 @@ async def save_message(user_id: int, username: str, text: str, is_command: bool,
             """, user_id, username, text, is_command, timestamp)
     except DataError as e:
         print('Error', e)
+
+
+
+@dp.message(F.document)
+async def send_audio(message: Message):
+
+    document = message.document
+    file_id = document.file_id
+    file = await message.bot.get_file(file_id)
+
+    file_type = file.file_path.split(".")[-1]
+    file_name = dt.now().strftime('%Y-%m-%d_%H_%M_%H_%S.%f') + '.' + file_type
+    file_size = file.file_size
+    
+    Path(f"downloads/{file_type}").mkdir(parents=True, exist_ok=True)
+    download_path = os.path.join('downloads', file_type, file_name)
+   
+    await message.bot.download_file(file.file_path, download_path)
+
+    await message.answer(f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb, сохранен в {download_path}")
 
 
 @dp.message()
@@ -99,9 +120,12 @@ async def message_router(message: Message):
     if not await is_user_allowed(user_id):
         await message.reply(f"⛔ @{username}:{user_id} У вас нет доступа.")
         return
-    await save_message(user_id, username, text, is_command, timestamp)
-
-    await message.reply(f"Записано ✅")
+    if is_command:
+        await save_message(user_id, username, text, is_command, timestamp)
+        await message.reply(f"Записано ✅")
+    print('#'*80)
+    print(message)
+    print('#'*80)
 
 # # Функция для команд (все что начинается с "/")
 # async def handle_command(user_id: int, text: str, timestamp: datetime):
