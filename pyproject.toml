@@ -19,6 +19,7 @@ dependencies = [
     "uvicorn (>=0.41.0,<0.42.0)"
 ]
 [tool.poetry]
+name = "calories-bot"
 package-mode = false
 
 [build-system]
