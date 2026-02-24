@@ -4,6 +4,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import HTMLResponse
 from zoneinfo import ZoneInfo
 from dotenv import load_dotenv
+from jinja2 import Environment, FileSystemLoader
 
 load_dotenv()
 
@@ -42,41 +43,22 @@ async def show_messages(timezone: str = Query("UTC")):
         """)
 
     tz = ZoneInfo(timezone)
-
-    table_rows = ""
-
+    environment = Environment(loader=FileSystemLoader("templates/"))
+    template = environment.get_template("index.html")
+    lines = []
     for row in rows:
         local_time = row["created_at"].astimezone(tz)
-        table_rows += f"""
-        <tr>
-            <td>{local_time.strftime('%Y-%m-%d %H:%M:%S')}</td>
-            <td>{row['username'] or ''}</td>
-            <td>{row['text']}</td>
-        </tr>
-        """
+        lines.append(
+            {
+            'timestamp': local_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'message': row['text'],
+            'username': row['username']
+            })
+    
+    context = {
+        'lines' :  lines
+    }
 
-    html = f"""
-    <html>
-    <head>
-        <title>Calor Messages</title>
-        <style>
-            table {{ border-collapse: collapse; width: 100%; }}
-            th, td {{ border: 1px solid #ddd; padding: 8px; }}
-            th {{ background-color: #f2f2f2; }}
-        </style>
-    </head>
-    <body>
-        <h2>Messages (Timezone: {timezone})</h2>
-        <table>
-            <tr>
-                <th>Timestamp</th>
-                <th>Username</th>
-                <th>Message</th>
-            </tr>
-            {table_rows}
-        </table>
-    </body>
-    </html>
-    """
+    html = template.render(context)
 
     return html

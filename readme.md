@@ -8,4 +8,7 @@
 | Функции и методы | lower_with_under() | _lower_with_under() |
 
 
-
+run:
+```
+uvicorn web:app --host 0.0.0.0 --port 8000
+```
