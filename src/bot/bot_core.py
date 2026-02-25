@@ -123,9 +123,11 @@ async def message_router(message: Message):
     if is_command:
         await save_message(user_id, username, text, is_command, timestamp)
         await message.reply(f"Записано ✅")
-    print('#'*80)
-    print(message)
-    print('#'*80)
+    if os.getenv("DEBUG") == '1':
+
+        print('#'*80)
+        print(message)
+        print('#'*80)
 
 # # Функция для команд (все что начинается с "/")
 # async def handle_command(user_id: int, text: str, timestamp: datetime):
