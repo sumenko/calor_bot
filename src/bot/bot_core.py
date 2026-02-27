@@ -20,8 +20,8 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import F
 import os
-import pytz
-
+import subprocess
+from commands import allowed_commands
 # CalorGroupBot
 # calor_user_bot
 
@@ -84,10 +84,28 @@ async def save_message(user_id: int, username: str, text: str, is_command: bool,
     except DataError as e:
         print('Error', e)
 
+async def a_command(command, answer):
+    answer[0] = subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip()
+
+
+async def execute_command(command, message):
+    a = ['?']
+    if command in allowed_commands:
+        # await a_command(command, a)
+        await message.reply(subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip())
+    else:
+        await message.reply(f"⛔ Неизвестная команда")
+        # await message.reply(f"Got command {command}")
+         
+    """
+        subprocess.run
+        "transmission-remote -l | awk -F '   ' '{print $12}'"
+    """
+
 
 
 @dp.message(F.document)
-async def send_audio(message: Message):
+async def send_file(message: Message):
 
     document = message.document
     file_id = document.file_id
@@ -122,9 +140,10 @@ async def message_router(message: Message):
         return
     if is_command:
         await save_message(user_id, username, text, is_command, timestamp)
-        await message.reply(f"Записано ✅")
+        await execute_command(text[1:], message)
+        
+        # await message.reply(f"Записано ✅")
     if os.getenv("DEBUG") == '1':
-
         print('#'*80)
         print(message)
         print('#'*80)
