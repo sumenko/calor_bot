@@ -127,7 +127,7 @@ async def send_file(message: Message):
 async def message_router(message: Message):
     if not message.text:
         return
-
+    print("CHAT ID:", message.chat.id)
     user_id = message.from_user.id
     username = message.from_user.username
     text = message.text
@@ -169,11 +169,15 @@ async def message_router(message: Message):
 #     else:
 #         await handle_text(user_id, text, timestamp)
 
+GROUP_CHAT_ID = -5233701044
+@dp.startup()
+async def on_startup():
+    await bot.send_message(GROUP_CHAT_ID, "Я запустился ✅")
+
 
 async def main():
     await init_db()
     await dp.start_polling(bot)
-
 
 if __name__ == "__main__":
 
