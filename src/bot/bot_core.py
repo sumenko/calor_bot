@@ -95,8 +95,9 @@ async def execute_command(command, message):
     a = ['?']
     if command in allowed_commands:
         answer = subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip()
+        
         if command == 'td':
-            answer = get_numbered_clean_list(answer)
+            answer = '\n'. join(get_numbered_clean_list(answer))
         await message.reply(answer)
     else:
         await message.reply(f"⛔ Неизвестная команда")
