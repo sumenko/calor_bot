@@ -23,6 +23,7 @@ import os
 import subprocess
 from commands import allowed_commands
 from cut_tags import get_numbered_clean_list
+from time import process_time
 
 # CalorGroupBot
 # calor_user_bot
@@ -176,7 +177,7 @@ async def message_router(message: Message):
 GROUP_CHAT_ID = -5233701044
 @dp.startup()
 async def on_startup():
-    await bot.send_message(GROUP_CHAT_ID, "Я запустился ✅")
+    await bot.send_message(GROUP_CHAT_ID, f"Я запустился за {process_time():3.03f}с ✅")
 
 
 async def main():
