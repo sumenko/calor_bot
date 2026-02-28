@@ -30,7 +30,6 @@ def command_add_remove_tag(command, message):
         if command == 'rmtg':
             tc.rm_tag(tag, flush=True)
             return f'remove tag \'{tag}\''
-        
     return 'error'
 
 def command_halt(command, message):
@@ -52,12 +51,6 @@ allowed_commands = {
         'func': command_execute_os,
         'mock' : 'Linuxxxx',
         'help' : 'OS info' 
-        },
-    'la': {
-        'arg_text': 'ls -a',
-        'func': command_execute_os,
-        'mock' : 'list files',
-        'help' : 'OS info',
         },
     'addtg' : {
         'arg_text': '',
