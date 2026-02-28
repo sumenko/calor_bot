@@ -1,9 +1,8 @@
-
-
 from time import process_time
+from mock_data import td_mock
+
 
 class TagsContainer:
-    # cut_tags = ('720p', '1080p', 'WEB', 'DL', 'LostFilm','OKKO', 'WEBRip', 'mkv', 'TV', '2160p', 'sdr', 'webdl', 'rus', 'sofcj', 'bdrip', 'om')
     def __init__(self):
         self.tag_file_name = 'list_tags.txt'
         self.cut_tags = self.read_tags()
@@ -62,32 +61,10 @@ class TorrentFileNameCleaner(TagsContainer):
     def get_clean_numbered_text(self, text):
         return '\n'.join(self.get_numbered_clean_list(text))
 
-    # def __del__(self):
-    #     self.sort_tags()
-    #     self.flush_tags()
-    
-
 
 if __name__ == '__main__':
-    test = """Down.Periscope.1996.WEBRip.1080p.mkv
-Locke & Key 1 - LostFilm.TV [1080p]
-Ponies.S01E08.1080p.rus.LostFilm.TV.mkv
-28.Years.Later.The.Bone.Temple.1080p.rus.LostFilm.TV.mkv
-McHales Navy [1997 WEB-DL 1080p].mkv
-Harry.Potter.and.the.Philosopher's.Stone.2001.WEB-DL.OKKO.SDR.2160p-SOFCJ.mkv
-Harry.Potter.and.the.Chamber.of.Secrets.2002.Extended.Cut.BDRip.1080p-SOFCJ.mkv
-Harry.Potter.and.the.Sorcerer’s.Stone.2001.Extended.Cut.BDRip.1080p-SOFCJ.mkv
-Harry.Potter.and.the.Prisoner.of.Azkaban.2004.WEB-DL.OKKO.SDR.2160p-SOFCJ.mkv
-Harry.Potter.and.the.Goblet.of.Fire.2005.BDRip.1080p-SOFCJ.mkv
-Harry.Potter.and.the.Order.of.the.Phoenix.2007.BDRip.1080p-SOFCJ.mkv
-Harry.Potter.and.the.Half-Blood.Prince.2009.WEB-DL.OM.1080p-SOFCJ.mkv
-Harry.Potter.and.the.Deathly.Hallows.Part.2.2011.BDRip.1080p-SOFCJ.mkv
-Harry.Potter.and.the.Deathly.Hallows.Part.1.2010.BDRip.1080p-SOFCJ.mkv
-"""
-    # print(process_time())
-    # print('\n'.join(get_numbered_clean_list(test)))
+
+    test = td_mock
     tfc = TorrentFileNameCleaner()
-    print(tfc.get_clean_numbered_text(test))
-    tfc.add_tag('1080p', flush=True)
     print(tfc.get_clean_numbered_text(test))
 

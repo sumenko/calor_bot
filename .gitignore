@@ -19,5 +19,5 @@
 .venv
 /poetry.toml
 .env
-
+.debug
 

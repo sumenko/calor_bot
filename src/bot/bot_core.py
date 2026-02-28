@@ -20,17 +20,15 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import F
 import os
-import subprocess
 from commands import allowed_commands
-from cut_tags import get_numbered_clean_list
+from cut_tags import TorrentFileNameCleaner
 from time import process_time
 
-# CalorGroupBot
-# calor_user_bot
 
 load_dotenv()  # Загружаем переменные из .env
 
 TOKEN = os.getenv("BOT_TOKEN")
+DEBUG = os.getenv("DEBUG")
 
 DB_CONFIG = {
     "user": os.getenv("DB_USER"),
@@ -87,27 +85,18 @@ async def save_message(user_id: int, username: str, text: str, is_command: bool,
     except DataError as e:
         print('Error', e)
 
-async def a_command(command, answer):
-    answer[0] = subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip()
-
 
 async def execute_command(command, message):
-    a = ['?']
     if command in allowed_commands:
-        answer = subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip()
+        func = allowed_commands[command]['func']
+        answer = func(command, message.text)
         
         if command == 'td':
-            answer = '\n'. join(get_numbered_clean_list(answer))
+            tfc = TorrentFileNameCleaner()
+            answer = tfc.get_clean_numbered_text(answer)
         await message.reply(answer)
     else:
         await message.reply(f"⛔ Неизвестная команда")
-        # await message.reply(f"Got command {command}")
-         
-    """
-        subprocess.run
-        "transmission-remote -l | awk -F '   ' '{print $12}'"
-    """
-
 
 
 @dp.message(F.document)
@@ -133,7 +122,8 @@ async def send_file(message: Message):
 async def message_router(message: Message):
     if not message.text:
         return
-    print("CHAT ID:", message.chat.id)
+    if DEBUG == '1':
+        print("CHAT ID:", message.chat.id)
     user_id = message.from_user.id
     username = message.from_user.username
     text = message.text
@@ -146,13 +136,14 @@ async def message_router(message: Message):
         return
     if is_command:
         await save_message(user_id, username, text, is_command, timestamp)
-        await execute_command(text[1:], message)
+        command = text[1:].split(' ')[0]
+        await execute_command(command, message)
         
         # await message.reply(f"Записано ✅")
-    if os.getenv("DEBUG") == '1':
-        print('#'*80)
-        print(message)
-        print('#'*80)
+    # if DEBUG == '1':
+    #     print('#'*80)
+    #     print(message)
+    #     print('#'*80)
 
 # # Функция для команд (все что начинается с "/")
 # async def handle_command(user_id: int, text: str, timestamp: datetime):
