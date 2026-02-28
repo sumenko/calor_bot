@@ -22,6 +22,8 @@ from aiogram import F
 import os
 import subprocess
 from commands import allowed_commands
+from cut_tags import get_numbered_clean_list
+
 # CalorGroupBot
 # calor_user_bot
 
@@ -91,8 +93,10 @@ async def a_command(command, answer):
 async def execute_command(command, message):
     a = ['?']
     if command in allowed_commands:
-        # await a_command(command, a)
-        await message.reply(subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip())
+        answer = subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip()
+        if command == 'td':
+            answer = get_numbered_clean_list(answer)
+        await message.reply()
     else:
         await message.reply(f"⛔ Неизвестная команда")
         # await message.reply(f"Got command {command}")
