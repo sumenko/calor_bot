@@ -48,10 +48,9 @@ class TorrentFileNameCleaner(TagsContainer):
 
     def clean_line(self, text):
         result = text
-        # print('Clean: ', text, ' => ', end='')
         for tag in self.cut_tags:
             result = result.replace(tag, '')
-        # print(result)
+
         return result
 
     def text_clean_to_list(self, text):
@@ -62,8 +61,7 @@ class TorrentFileNameCleaner(TagsContainer):
         clean_lines = []
         for line in split_lines:
             clean_lines.append(self.clean_line(line.lower()))
-        # clean_list_split_dots = [[a for a in line.lower().split('.') if a not in cut_tags_lower] for line in split_lines]
-        # clean_lines = [' '.join([word.capitalize() for word in line]) for line in  clean_list_split_dots if line[0]]
+
         return clean_lines
 
     def get_numbered_clean_list(self, list_text):
@@ -77,8 +75,6 @@ if __name__ == '__main__':
 
     test = td_mock
     tfc = TorrentFileNameCleaner()
-
-    # print(tfc.tags_list())
     print(tfc.get_clean_numbered_text(test))
-    # print(tfc.clean_line('locke & key 1   lostfilm tv  1080p'))
+
 
