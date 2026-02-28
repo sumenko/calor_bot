@@ -96,7 +96,7 @@ async def execute_command(command, message):
         answer = subprocess.run(allowed_commands[command], shell=True, capture_output=True, text=True, check=True).stdout.strip()
         if command == 'td':
             answer = get_numbered_clean_list(answer)
-        await message.reply()
+        await message.reply(answer)
     else:
         await message.reply(f"⛔ Неизвестная команда")
         # await message.reply(f"Got command {command}")
