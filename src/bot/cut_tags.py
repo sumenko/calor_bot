@@ -48,10 +48,11 @@ class TorrentFileNameCleaner(TagsContainer):
 
     def clean_line(self, text):
         result = text
+        
         for tag in self.cut_tags:
             result = result.replace(tag, '')
 
-        return result
+        return ' '.join([cap.capitalize() for cap in result.split()])
 
     def text_clean_to_list(self, text):
         clean_text = ' '.join(self.clean_symbols(text).split(' '))
