@@ -11,12 +11,13 @@ DEBUG = os.getenv("DEBUG")
 
 
 def command_execute_os(command, message, arg=''):
+    cmd = allowed_commands[command]['arg_text'] + ' ' + arg
     if DEBUG =='1':
-        return allowed_commands[command]['mock']
+        return allowed_commands[command]['mock'], cmd
     try:
-        return subprocess.run(allowed_commands[command]['arg_text'] + arg, shell=True, capture_output=True, text=True, check=True).stdout.strip()
+        return subprocess.run(cmd, shell=True, capture_output=True, text=True, check=True).stdout.strip(), cmd
     except subprocess.CalledProcessError as e:
-        return f'Error: {e}'
+        return f'Error: {e}', cmd
 
 def command_add_remove_tag(command, message):
     if command == 'addtg' or command == 'rmtg':

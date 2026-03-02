@@ -117,7 +117,8 @@ async def send_file(message: Message):
     await message.answer(f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb")   #, сохранен в {download_path}")
     if file_type == 'torrent':
         await message.answer('Отправлен в \'transmission\'')
-        command_execute_os('add', message, download_path)
+        result, cmd = command_execute_os('add', message, f'\"{download_path}\"')
+        await message.answer(f'Result: \'{result}\'\ncommand: \'{cmd}\'')
 
 
 
