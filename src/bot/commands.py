@@ -2,6 +2,7 @@ import subprocess
 from dotenv import load_dotenv
 import os
 from cut_tags import TagsContainer
+from cut_tags import TorrentFileNameCleaner
 from mock_data import td_mock
 import sys
 
@@ -9,15 +10,13 @@ load_dotenv()  # Загружаем переменные из .env
 DEBUG = os.getenv("DEBUG")
 
 
-def command_execute_os(command, message):
+def command_execute_os(command, message, arg=''):
     if DEBUG =='1':
         return allowed_commands[command]['mock']
     try:
-        return subprocess.run(allowed_commands[command]['arg_text'], shell=True, capture_output=True, text=True, check=True).stdout.strip()
+        return subprocess.run(allowed_commands[command]['arg_text'] + arg, shell=True, capture_output=True, text=True, check=True).stdout.strip()
     except subprocess.CalledProcessError as e:
         return f'Error: {e}'
-
-
 
 def command_add_remove_tag(command, message):
     if command == 'addtg' or command == 'rmtg':
@@ -32,6 +31,19 @@ def command_add_remove_tag(command, message):
             return f'remove tag \'{tag}\''
     return 'error'
 
+def command_ls_downloads(command, message):
+    result = command_execute_os(command, message).encode('windows-1251').decode('utf8')
+    if not 'error' in result.lower():
+        print(result)
+        tfc = TorrentFileNameCleaner()
+        return tfc.get_clean_numbered_text(result)
+    else:
+        return 'no torrents'
+
+
+def command_torrent(command, message):
+    return 'added'
+
 def command_halt(command, message):
     return sys.exit(0)
 
@@ -45,7 +57,20 @@ allowed_commands = {
          'func' : command_execute_os,
          'mock' : td_mock,
          'help' : 'List downloaded files from transmission daemon'
-         }, 
+         },
+    'dls' : 
+        {'arg_text': "ls downloads/*.torrent", 
+         'func' : command_ls_downloads,
+         'mock' : 'dls mock!!!',
+         'help' : 'List downloads dir'
+         },
+    'add' : 
+        {'arg_text': "transmission-remote 192.168.10.121 -n transmission:transmission -a", 
+         'func' : command_torrent,
+         'mock' : 'mock!!!',
+         'help' : 'Usage: add <Movies> | <Serials> | <Cartoon> add torrents to specific folder'
+         },
+
     'a': {
         'arg_text': 'uname -a',
         'func': command_execute_os,
@@ -80,8 +105,7 @@ allowed_commands = {
 
 
 if __name__ == '__main__':
-    command = 'atg'
-    message = 'atg ttt'
-    # print(allowed_commands[command]['func'](command, message))
-    a = command_list_commands('', '')
-    print(a)
+    command = 'dls'
+    message = 'dls ttt'
+    print(allowed_commands[command]['func'](command, message))
+    

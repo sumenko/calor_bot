@@ -20,7 +20,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram import F
 import os
-from commands import allowed_commands
+from commands import allowed_commands, command_execute_os
 from cut_tags import TorrentFileNameCleaner
 from time import process_time
 
@@ -114,8 +114,11 @@ async def send_file(message: Message):
     download_path = os.path.join('downloads', file_type, file_name)
    
     await message.bot.download_file(file.file_path, download_path)
+    await message.answer(f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb")   #, сохранен в {download_path}")
+    if file_type == 'torrent':
+        await message.answer('Отправлен в \'transmission\'')
+        command_execute_os('add', message, download_path)
 
-    await message.answer(f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb, сохранен в {download_path}")
 
 
 @dp.message()
