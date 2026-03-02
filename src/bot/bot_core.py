@@ -114,11 +114,17 @@ async def send_file(message: Message):
     download_path = os.path.join('downloads', file_type, file_name)
    
     await message.bot.download_file(file.file_path, download_path)
-    await message.answer(f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb")   #, сохранен в {download_path}")
+    answer = f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb"
+
     if file_type == 'torrent':
-        await message.answer('Отправлен в \'transmission\'')
-        result, cmd = command_execute_os('add', message, f'\"{download_path}\"')
-        await message.answer(f'Result: \'{result}\'\ncommand: \'{cmd}\'')
+        result, _ = command_execute_os('add', message, f'\"{download_path}\"')
+        status = "статус неизвестен"
+        if "error" in result.lower():
+            status = f"ошибка ({result})"
+        if "success" in result.lower():
+            status = "добавлен"
+        answer += f'\nTransmission - {status}'
+    await message.reply(answer)
 
 
 
