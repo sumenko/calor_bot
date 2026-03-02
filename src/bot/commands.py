@@ -59,6 +59,12 @@ allowed_commands = {
          'mock' : td_mock,
          'help' : 'List downloaded files from transmission daemon'
          },
+    'tq' : 
+        {'arg_text': "transmission-remote 192.168.10.121 -n transmission:transmission -l | grep '%' |awk -F'  +' 'NR>1 { print $NF  \" - \" $3 \" - \" $4 \" - \" $5}' | grep -v '100%'", 
+         'func' : command_execute_os,
+         'mock' : td_mock,
+         'help' : 'List queued files'
+         },
     'dls' : 
         {'arg_text': "ls downloads/*.torrent", 
          'func' : command_ls_downloads,

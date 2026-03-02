@@ -91,7 +91,7 @@ async def execute_command(command, message):
         func = allowed_commands[command]['func']
         answer = func(command, message.text)
         
-        if command == 'td':
+        if command in ('td', 'tq'):
             tfc = TorrentFileNameCleaner()
             answer = tfc.get_clean_numbered_text(answer)
         await message.reply(answer)
