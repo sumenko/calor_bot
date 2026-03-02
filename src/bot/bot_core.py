@@ -117,7 +117,7 @@ async def send_file(message: Message):
     answer = f"Получен файл формата '{file_type}' размер {file_size/1024:.1f}Kb"
 
     if file_type == 'torrent':
-        result, _ = command_execute_os('add', message, f'\"{download_path}\"')
+        result = command_execute_os('add', message, f'\"{download_path}\"')
         status = "статус неизвестен"
         if "error" in result.lower():
             status = f"ошибка ({result})"
