@@ -8,7 +8,10 @@ import sys
 
 load_dotenv()  # Загружаем переменные из .env
 DEBUG = os.getenv("DEBUG")
-
+TRANSMISSION_IP = os.getenv("TRANSMISSION_IP")
+command_transmission_host = f"transmission-remote {TRANSMISSION_IP} -n transmission:transmission"
+command_transmission_list_done =  command_transmission_host + " -l "
+command_transmission_add =  command_transmission_host + " -a "
 
 def command_execute_os(command, message, arg=''):
     cmd = allowed_commands[command]['arg_text'] + ' ' + arg
@@ -54,13 +57,13 @@ def command_list_commands(command, message):
 
 allowed_commands = {
     'td' : 
-        {'arg_text': "transmission-remote 192.168.10.121 -n transmission:transmission -l | grep 'Done' |awk -F'  +' 'NR>1 { print $NF }'", 
+        {'arg_text': command_transmission_list_done + " | grep 'Done' |awk -F'  +' 'NR>1 { print $NF }'", 
          'func' : command_execute_os,
          'mock' : td_mock,
          'help' : 'List downloaded files from transmission daemon'
          },
     'tq' : 
-        {'arg_text': "transmission-remote 192.168.10.121 -n transmission:transmission -l | grep '%' |awk -F'  +' 'NR>1 { print $NF  \" - \" $3 \" - \" $4 \" - \" $5}' | grep -v '100%'", 
+        {'arg_text': command_transmission_list_done + " | grep '%' |awk -F'  +' 'NR>1 { print $NF  \" - \" $3 \" - \" $4 \" - \" $5}' | grep -v '100%'", 
          'func' : command_execute_os,
          'mock' : td_mock,
          'help' : 'List queued files'
@@ -72,7 +75,7 @@ allowed_commands = {
          'help' : 'List downloads dir'
          },
     'add' : 
-        {'arg_text': "transmission-remote 192.168.10.121 -n transmission:transmission -a", 
+        {'arg_text': command_transmission_add, 
          'func' : command_torrent,
          'mock' : 'mock!!!',
          'help' : 'Usage: add <Movies> | <Serials> | <Cartoon> add torrents to specific folder'
