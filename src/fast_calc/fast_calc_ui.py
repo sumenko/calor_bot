@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import filedialog, messagebox, simpledialog
 from fast_calc_core import FastTabCalc
 import os
@@ -47,7 +48,7 @@ class App:
         self.root.bind("<F5>", self.run_calculation)
         self.root.bind_all("<Key>", self.global_hotkey)
         self.text.bind("<Control-MouseWheel>", self.ctrl_mouse_scroll)
-        self.root.protocol("WM_DELETE_WINDOW", self.exit_program)        
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
 
     def create_menu(self):
         menubar = tk.Menu(self.root)
@@ -95,28 +96,37 @@ class App:
         right_frame = tk.Frame(container)
         right_frame.grid(row=0, column=2, sticky="nsew")
 
-        # Настройка пропорций строк
-        right_frame.grid_rowconfigure(0, weight=2)  # верх 2/3
-        right_frame.grid_rowconfigure(1, weight=1)  # низ 1/3
-        right_frame.grid_columnconfigure(0, weight=1)
-
-        # Верхний текст (результат)
-        self.result = tk.Text(
+        # PanedWindow с вертикальным разделением
+        self.right_pane = ttk.Panedwindow(
             right_frame,
+            orient="vertical"
+        )
+        self.right_pane.pack(fill="both", expand=True)
+
+        # ----- верхняя панель (результат) -----
+        top_frame = tk.Frame(self.right_pane)
+
+        self.result = tk.Text(
+            top_frame,
             wrap="word",
             font=("Consolas", FONT_SIZE),
             undo=True
         )
-        self.result.grid(row=0, column=0, sticky="nsew")
+        self.result.pack(fill="both", expand=True)
 
-        # Нижний текст (например лог)
+        # ----- нижняя панель (лог / доп. вывод) -----
+        bottom_frame = tk.Frame(self.right_pane)
+
         self.info = tk.Text(
-            right_frame,
+            bottom_frame,
             wrap="word",
-            font=("Consolas", FONT_SIZE),
-            height=5
+            font=("Consolas", FONT_SIZE)
         )
-        self.info.grid(row=1, column=0, sticky="nsew")
+        self.info.pack(fill="both", expand=True)
+
+        # добавляем панели
+        self.right_pane.add(top_frame)
+        self.right_pane.add(bottom_frame)
 
 
         # --- теги подсветки ---
@@ -131,7 +141,16 @@ class App:
         self.result.bind("<KeyRelease>", lambda e: self.check_document_changed())
         
         self.text.insert("1.0", self.default_data())
+
         self.refresh_visuals()
+        self.root.after(200, self.init_pane_position)  
+
+
+    def init_pane_position(self):
+        height = self.right_pane.winfo_height()
+        if height > 0:
+            self.right_pane.sashpos(0, int(height * 0.8))
+
 
     def global_hotkey(self, event):
         ctrl = (event.state & 0x4) != 0  # проверяем, что Ctrl зажат
