@@ -2,8 +2,9 @@ from tabulate import tabulate
 from decimal import Decimal, ROUND_UP
 from os import getcwd
 import re
-from item_ordering import ordering, weight
+from item_data import weight, ManageSettings
 import time
+
 
 
 class FastTabCalcError(Exception):
@@ -15,8 +16,8 @@ class FastTabCalcError(Exception):
 class FastTabCalc:
     def __init__(self, tabulated_text, node_symbol='#'):
         self.node_symbol = node_symbol
-        self.ordering_list = [(a[0], a[1].lower()) for a in enumerate(ordering)]
-        # print(self.ordering_list)
+        self.settings = ManageSettings()
+        self.ordering_list = [(a[0], a[1].lower()) for a in enumerate(self.settings.ordering_list)]
         self.norm_weights = self.read_weights()
 
         clean_text_lines = self.skip_useless_lines(tabulated_text)
@@ -129,15 +130,15 @@ class FastTabCalc:
             return [item[0].lstrip(self.node_symbol).lower().startswith(x[1]) for x in self.ordering_list].index(True)
         except ValueError:
             return 1000
-    def get_weight(self, name, qty):
+    def get_weight(self, name, qty, c_if_zero=None):
         # print(name in weight, name, weight)
         clean_name = name.lower().replace(' ', '')
         if clean_name in self.norm_weights:
             return Decimal(Decimal(self.norm_weights[clean_name])*Decimal(qty)).quantize(Decimal('0.1'), ROUND_UP)
-        return 0
+        return 0 if not c_if_zero else c_if_zero
 
     def get_totals_but_nodes_tabulated(self, data_dict, nodes):
-        l = [(k, data_dict[k], self.get_weight(k, data_dict[k])) for k in data_dict if k not in nodes]
+        l = [(k, data_dict[k], self.get_weight(k, data_dict[k], c_if_zero='-')) for k in data_dict if k not in nodes]
         l.sort(key = lambda k: self.get_priority(k))
         return tabulate(l, 
                     headers=('Наименование', 'Кол.', 'Вес, кг'))
