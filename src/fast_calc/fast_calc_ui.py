@@ -35,7 +35,13 @@ class LineNumbers(tk.Canvas):
             i = self.text_widget.index(f"{i}+1line")
 
 
-class App:
+class App:    
+    symbol_colors = {
+        "#": "#909090",   # серый для комментариев
+        "$": "#00fac0",   # светло-желтый
+        "!": "#00b0ff"    # красный для ошибок
+    }
+
     def __init__(self, root):
         self.document_changed = False
         self.root = root
@@ -49,6 +55,9 @@ class App:
         self.root.bind_all("<Key>", self.global_hotkey)
         self.text.bind("<Control-MouseWheel>", self.ctrl_mouse_scroll)
         self.root.protocol("WM_DELETE_WINDOW", self.exit_program)
+
+
+    # self.highlight_lines_by_symbol(symbol_colors)
 
     def create_menu(self):
         menubar = tk.Menu(self.root)
@@ -136,17 +145,21 @@ class App:
         self.text.tag_configure("search", background="#ffcc66")
 
         # бинды
-        self.text.bind("<KeyRelease>", lambda e: [self.refresh_visuals(), self.check_document_changed()])
+        self.text.bind("<KeyRelease>", lambda e: [self.refresh_visuals(), self.check_document_changed(), self.highlight_lines_by_symbol(self.symbol_colors)])
         self.text.bind("<ButtonRelease>", self.refresh_visuals)
         self.result.bind("<KeyRelease>", lambda e: self.check_document_changed())
-        
+        self.root.bind_all("<Alt-Up>", lambda e: self.move_lines(-1))
+        self.root.bind_all("<Alt-Down>", lambda e: self.move_lines(1))
+        self.root.bind_all("<Alt-Shift-Up>", lambda e: self.duplicate_lines(-1))
+        self.root.bind_all("<Alt-Shift-Down>", lambda e: self.duplicate_lines(1))                
         self.text.insert("1.0", self.default_data())
-
+        # self.root.bind_all("<Control-h>", lambda e: (self.open_search_replace(), "break"))
         self.refresh_visuals()
         self.root.after(200, self.init_pane_position)  
 
 
     def init_pane_position(self):
+
         height = self.right_pane.winfo_height()
         if height > 0:
             self.right_pane.sashpos(0, int(height * 0.8))
@@ -162,18 +175,208 @@ class App:
             # print('ctrl+', key_code, key_sym)
             if key_code == ord('A') and key_sym != 'a':        # Ctrl+A
                 self.select_all()
-            elif key_code == ord('F') and key_sym != 'f':      # Ctrl+F
-                self.find_text()
             elif key_code == ord('C') and key_sym != 'c':      # Ctrl+C
                 self.root.focus_get().event_generate("<<Copy>>")
             elif key_code == ord('V') and key_sym != 'v':      # Ctrl+V
                 self.root.focus_get().event_generate("<<Paste>>")
             elif key_code == ord('Q'):      # Ctrl+V
                 self.exit_program()
+            elif key_code == ord('F'):      # Ctrl+F
+                self.find_text()
+            elif key_code == ord('H'):      # Ctrl+F
+                self.open_search_replace()
             if key_code == ord('S'):        # Ctrl+A
                 self.save_file()
         return "break"
 
+    # TODO
+    def highlight_lines_by_symbol(self, symbol_colors: dict):
+        """
+        Подсвечивает строки в левом или правом редакторе, которые начинаются с символов из словаря.
+        symbol_colors = {'#': 'lightgray', '$': 'yellow'}
+        """
+
+        for widget in (self.text, self.result):  # редактируемые окна
+            # сначала удаляем старые теги
+            for tag in widget.tag_names():
+                if tag.startswith("symbol_"):
+                    widget.tag_delete(tag)
+
+            lines = widget.get("1.0", "end-1c").split("\n")
+            for i, line in enumerate(lines):
+                stripped = line.lstrip()
+                if not stripped:
+                    continue
+                first_char = stripped[0]
+                if first_char in symbol_colors:
+                    tag_name = f"symbol_{first_char}"
+                    # если тег ещё не создан — создаём
+                    if tag_name not in widget.tag_names():
+                        widget.tag_config(tag_name, background=symbol_colors[first_char])
+                    # добавляем тег на строку
+                    widget.tag_add(tag_name, f"{i+1}.0", f"{i+1}.0 lineend")
+
+    # TODO
+    def duplicate_lines(self, direction):
+        widget = self.root.focus_get()
+
+        if widget not in (self.text, self.result):
+            return "break"
+
+        start_line, end_line = self._get_selected_lines(widget)
+
+        start = f"{start_line}.0"
+        end = f"{end_line+1}.0"
+
+        block = widget.get(start, end)
+
+        if direction == -1:
+            widget.insert(start, block)
+            new_start = start_line
+        else:
+            widget.insert(end, block)
+            new_start = end_line + 1
+
+        widget.tag_remove("sel", "1.0", "end")
+        widget.tag_add(
+            "sel",
+            f"{new_start}.0",
+            f"{new_start + (end_line-start_line)+1}.0"
+        )
+
+        widget.mark_set("insert", f"{new_start}.0")
+
+        return "break"
+        
+    # TODO
+    def move_lines(self, direction):
+        widget = self.root.focus_get()
+
+        if widget not in (self.text, self.result):
+            return "break"
+
+        start_line, end_line = self._get_selected_lines(widget)
+        last_line = int(widget.index("end-1c").split(".")[0])
+
+        if direction == -1 and start_line == 1:
+            return "break"
+
+        if direction == 1 and end_line == last_line:
+            return "break"
+
+        start = f"{start_line}.0"
+        end = f"{end_line+1}.0"
+
+        block = widget.get(start, end)
+
+        if direction == -1:
+            # строка над блоком
+            above_start = f"{start_line-1}.0"
+            above_end = f"{start_line}.0"
+            above_line = widget.get(above_start, above_end)
+
+            widget.delete(above_start, end)
+            widget.insert(above_start, block + above_line)
+
+            new_start = start_line - 1
+
+        else:
+            # строка под блоком
+            below_start = f"{end_line+1}.0"
+            below_end = f"{end_line+2}.0"
+            below_line = widget.get(below_start, below_end)
+
+            widget.delete(start, below_end)
+            widget.insert(start, below_line + block)
+
+            new_start = start_line + 1
+
+        # восстановить выделение
+        widget.tag_remove("sel", "1.0", "end")
+        widget.tag_add(
+            "sel",
+            f"{new_start}.0",
+            f"{new_start + (end_line-start_line)+1}.0"
+        )
+
+        widget.mark_set("insert", f"{new_start}.0")
+
+        return "break"
+
+    def open_search_replace(self):
+        widget = self.root.focus_get()
+        if widget not in (self.text, self.result):
+            return
+
+        top = tk.Toplevel(self.root)
+        top.title("Поиск и замена")
+        top.transient(self.root)
+        top.resizable(False, False)
+
+        tk.Label(top, text="Найти:").grid(row=0, column=0, sticky="e")
+        find_entry = tk.Entry(top, width=30)
+        find_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(top, text="Заменить на:").grid(row=1, column=0, sticky="e")
+        replace_entry = tk.Entry(top, width=30)
+        replace_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        # Функция поиска
+        def do_find():
+            widget.tag_remove("search_match", "1.0", "end")
+            target = find_entry.get()
+            if not target:
+                return
+            start = "1.0"
+            while True:
+                pos = widget.search(target, start, stopindex="end")
+                if not pos:
+                    break
+                end = f"{pos}+{len(target)}c"
+                widget.tag_add("search_match", pos, end)
+                start = end
+            widget.tag_config("search_match", background="yellow")
+
+        # Функция замены
+        def do_replace():
+            target = find_entry.get()
+            replacement = replace_entry.get()
+            if not target:
+                return
+            start = "1.0"
+            while True:
+                pos = widget.search(target, start, stopindex="end")
+                if not pos:
+                    break
+                end = f"{pos}+{len(target)}c"
+                widget.delete(pos, end)
+                widget.insert(pos, replacement)
+                start = f"{pos}+{len(replacement)}c"
+            do_find()  # обновим подсветку
+
+        # Кнопки
+        tk.Button(top, text="Найти", command=do_find).grid(row=2, column=0, padx=5, pady=5)
+        tk.Button(top, text="Заменить", command=do_replace).grid(row=2, column=1, padx=5, pady=5)
+        tk.Button(top, text="Закрыть", command=top.destroy).grid(row=3, column=0, columnspan=2, pady=5)
+
+        find_entry.focus_set()
+
+        # --------- Убираем подсветку при закрытии окна ----------
+        def on_close():
+            # снять подсветку поиска
+            widget.tag_remove("search_match", "1.0", "end")
+            # снять выделение
+            try:
+                widget.tag_remove("sel", "1.0", "end")
+                # переместить курсор в конец текста (или в начало)
+                widget.mark_set("insert", "1.0")
+                widget.focus_set()  # опционально, чтобы фокус остался
+            except tk.TclError:
+                pass
+            self.lines.redraw()
+            top.destroy()
+
+        top.protocol("WM_DELETE_WINDOW", on_close)
 
     def check_document_changed(self, event=None):
         left_text = self.text.get("1.0", "end-1c")   # без последнего перевода строки
@@ -184,6 +387,20 @@ class App:
         else:
             self.document_changed = False
     
+    def _get_selected_lines(self, widget):
+        try:
+            start = widget.index("sel.first")
+            end = widget.index("sel.last")
+        except tk.TclError:
+            start = widget.index("insert")
+            end = start
+
+        start_line = int(start.split(".")[0])
+        end_line = int(end.split(".")[0])
+
+        return start_line, end_line
+
+
     def ctrl_mouse_scroll(self, event):
         if event.delta > 0:  # прокрутка вверх
             self.change_font_size(1)
@@ -257,7 +474,7 @@ class App:
         text = self.text.get("1.0", "end")
         try:
             # result = calculate_from_text(text)
-            result = FastTabCalc(text)
+            result = FastTabCalc(text, mono_tg=True)
             status = self.default_status()
         except Exception as e:
             result = f"Error:\n{e}"

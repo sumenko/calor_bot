@@ -14,7 +14,9 @@ class FastTabCalcError(Exception):
 
 
 class FastTabCalc:
-    def __init__(self, tabulated_text, node_symbol='#'):
+    def __init__(self, tabulated_text, node_symbol='!', mono_tg=True):
+        self.symbol_comment = '#'
+        self.mono_tg = mono_tg
         self.node_symbol = node_symbol
         self.settings = ManageSettings()
         self.ordering_list = [(a[0], a[1].lower()) for a in enumerate(self.settings.ordering_list)]
@@ -40,6 +42,8 @@ class FastTabCalc:
         clean_text_lines = []
         line_counter = 1
         for line in string_text.split('\n'):
+            if line.lstrip('\t').lstrip().startswith(self.symbol_comment):
+                continue
             a = len(line)
             b = line.count('\t')
             c = line.count(' ')
@@ -144,6 +148,9 @@ class FastTabCalc:
                     headers=('Наименование', 'Кол.', 'Вес, кг'))
     
     def __str__(self):
+        if self.mono_tg:
+            return "```\n" + self.result_string + "\n```"
+
         return self.result_string
 
 
