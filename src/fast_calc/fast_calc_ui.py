@@ -93,13 +93,31 @@ class App:
 
         # Правый фрейм
         right_frame = tk.Frame(container)
-        right_frame.grid(row=0, column=2, sticky="nsew")  # растягивается
-        self.result = tk.Text(right_frame, wrap="word", font=("Consolas", FONT_SIZE))
-        self.result.pack(fill="both", expand=True)
+        right_frame.grid(row=0, column=2, sticky="nsew")
 
-        self.status = tk.Text(right_frame, wrap="word", font=("Consolas", FONT_SIZE))
-        self.status.pack(fill="both", expand=True)
-        self.status.insert("1.0", self.default_status())
+        # Настройка пропорций строк
+        right_frame.grid_rowconfigure(0, weight=2)  # верх 2/3
+        right_frame.grid_rowconfigure(1, weight=1)  # низ 1/3
+        right_frame.grid_columnconfigure(0, weight=1)
+
+        # Верхний текст (результат)
+        self.result = tk.Text(
+            right_frame,
+            wrap="word",
+            font=("Consolas", FONT_SIZE),
+            undo=True
+        )
+        self.result.grid(row=0, column=0, sticky="nsew")
+
+        # Нижний текст (например лог)
+        self.info = tk.Text(
+            right_frame,
+            wrap="word",
+            font=("Consolas", FONT_SIZE),
+            height=5
+        )
+        self.info.grid(row=1, column=0, sticky="nsew")
+
 
         # --- теги подсветки ---
         self.text.tag_configure("tab", background=TAB_COLOR)
@@ -229,8 +247,8 @@ class App:
         self.result.delete("1.0", "end")
         self.result.insert("1.0", result.__str__())
 
-        self.status.delete("1.0", "end")
-        self.status.insert("1.0", status)
+        self.info.delete("1.0", "end")
+        self.info.insert("1.0", status)
 
 
     # --- открытие файла ---
