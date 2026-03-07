@@ -82,7 +82,7 @@ allowed_commands = {
          },
 
     'a': {
-        'arg_text': 'uname -a',
+        'arg_text': 'uname -a && /home/www/share/pressure/BMP085',
         'func': command_execute_os,
         'mock' : 'Linuxxxx',
         'help' : 'OS info' 
