@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog, messagebox, simpledialog
-from fast_calc_core import FastTabCalc
+from fast_calc_core import FastTabCalc, FastTabCalcError
 import os
 
 TAB_COLOR = "#dddddd"
@@ -44,10 +44,10 @@ class App:
 
     def __init__(self, root):
         self.document_changed = False
+        self.current_file = None
         self.root = root
-        self.root.title("Text Processor IDE")
+        self.root.title("Fast calc")
         self.root.geometry("1200x700")
-
         self.create_menu()
         self.create_widgets()
 
@@ -62,8 +62,10 @@ class App:
     def create_menu(self):
         menubar = tk.Menu(self.root)
         file_menu = tk.Menu(menubar, tearoff=0)
+        file_menu.add_command(label="Новый", command=self.new_file)
         file_menu.add_command(label="Открыть", command=self.open_file)
         file_menu.add_command(label="Сохранить", command=self.save_file)
+        file_menu.add_command(label="Закрыть", command=self.close_file)
         file_menu.add_separator()
         file_menu.add_command(label="Выход", command=self.exit_program)
         menubar.add_cascade(label="Файл", menu=file_menu)
@@ -329,7 +331,7 @@ class App:
                 return
             start = "1.0"
             while True:
-                pos = widget.search(target, start, stopindex="end")
+                pos = widget.search(target, start, stopindex="end", nocase=1)
                 if not pos:
                     break
                 end = f"{pos}+{len(target)}c"
@@ -384,8 +386,12 @@ class App:
 
         if left_text.strip() or right_text.strip():  # хотя бы один символ
             self.document_changed = True
+            sym = '*'
         else:
             self.document_changed = False
+            sym = ''
+        
+        self.root.title(self.current_file + ' ' + sym)
     
     def _get_selected_lines(self, widget):
         try:
@@ -462,7 +468,7 @@ class App:
         self.text.tag_remove("search", "1.0", "end")
         pos = "1.0"
         while True:
-            pos = self.text.search(search, pos, stopindex="end")
+            pos = self.text.search(search, pos, stopindex="end", nocase=1)
             if not pos:
                 break
             end = f"{pos}+{len(search)}c"
@@ -474,6 +480,7 @@ class App:
         text = self.text.get("1.0", "end")
         try:
             # result = calculate_from_text(text)
+            
             result = FastTabCalc(text, mono_tg=True)
             status = self.default_status()
         except Exception as e:
@@ -487,6 +494,12 @@ class App:
         self.info.insert("1.0", status)
 
 
+    def new_file(self, path=None):
+        pass
+
+    def close_file(self, path=None):
+        pass
+
     # --- открытие файла ---
     def open_file(self, path=None):
         if not path:
@@ -498,6 +511,8 @@ class App:
                 text = f.read()
             self.text.delete("1.0", "end")
             self.text.insert("1.0", text)
+            self.current_file = path
+            self.root.title(self.current_file)
             self.refresh_visuals()
             return text
         except Exception as e:
@@ -506,12 +521,18 @@ class App:
 
     def default_data(self):
         default_text = ''
-        with open('recent.txt', 'r', encoding='utf-8') as rec:
-            path = rec.read().strip('\n')
-            if path.endswith('.txt'):
-                text = self.open_file(path)
-                result = FastTabCalc(text)
-                self.result.insert("1.0", result)
+        try:
+            with open('recent.txt', 'r', encoding='utf-8') as rec:
+                path = rec.read().strip('\n')
+                if path.endswith('.txt'):
+                    text = self.open_file(path)
+                    print('try....')
+                    result = FastTabCalc(text)
+                    self.result.insert("1.0", result)
+        except FileNotFoundError:
+            pass
+        except FastTabCalcError:
+            pass
 
         return default_text
     
@@ -522,16 +543,22 @@ class App:
 
     # --- сохранение файла ---
     def save_file(self):
-        path_left = filedialog.asksaveasfilename(title="Сохранить файл",
-                                                defaultextension=".txt",
-                                                filetypes=[("Text files","*.txt"),("All files","*.*")])
+        path_left = self.current_file
+        if not path_left:
+            path_left = filedialog.asksaveasfilename(title="Сохранить файл",
+                                                    defaultextension=".txt",
+                                                    filetypes=[("Text files","*.txt"),("All files","*.*")])
         
         if path_left:
             try:
                 text = self.text.get("1.0", "end")
                 with open(path_left, "w", encoding="utf-8") as f:
                     f.write(text)
-                print(os.getcwd())
+                    self.document_changed = False
+                    self.root.title(self.current_file)
+                    # print(self.document_changed)
+                    # print('*')
+                # print(os.getcwd())
                 with open('recent.txt', 'w', encoding='utf-8') as recent:
                     recent.write(path_left)
 
@@ -541,8 +568,9 @@ class App:
 
     def exit_program(self):
         # Левый текст
+        print(self.document_changed)
         ask = False
-        if self.document_changed:
+        if self.document_changed == True:
             ask = messagebox.askyesnocancel("Выход", "Сохранить?")
             if ask:
                 self.save_file()
