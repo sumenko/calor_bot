@@ -5,8 +5,6 @@ import re
 from item_data import weight, ManageSettings
 import time
 
-
-
 class FastTabCalcError(Exception):
     def __init__(self, m):
         print(f'message: {m}')
@@ -37,13 +35,15 @@ class FastTabCalc:
             norm_weights[k.lower().replace(' ', '')] = weight[k]
         return norm_weights
 
+    def _clean_comment(self, text : str):
+        return text.split(self.symbol_comment)[0]
+        
 
     def skip_useless_lines(self, string_text):
         clean_text_lines = []
         line_counter = 1
-        for line in string_text.split('\n'):
-            if line.lstrip('\t').lstrip().startswith(self.symbol_comment):
-                continue
+        for _line in string_text.split('\n'):
+            line = self._clean_comment(_line)
             a = len(line)
             b = line.count('\t')
             c = line.count(' ')
@@ -77,7 +77,7 @@ class FastTabCalc:
                         family.pop()
                     family.append(line)
             except IndexError:
-                raise FastTabCalcError(f'lines {lines}, family {family}')
+                raise FastTabCalcError(f'lines {lines}\n family {family}')
                 # last = True
         # if last:
         dirty_tree.append(family.copy())
@@ -155,6 +155,13 @@ class FastTabCalc:
 
 
 if __name__ == '__main__':
+    a = FastTabCalc('text', node_symbol='#')
+    tests = ['# dfgfdgdfg', 'hello #12313', '###dsfsd']
+    print('-'*10)
+    for test_str in tests:
+        print(a._clean_comment(test_str))
+    print('-'*10)
+
     try:
         text = ''
         try:
@@ -172,8 +179,6 @@ if __name__ == '__main__':
 
             txt.write(','.join([a[1] for a in x.ordering_list])+'\n' +'\n')
             txt.write(x.__str__())
-
-
         
     except FastTabCalcError as e:
         x = None

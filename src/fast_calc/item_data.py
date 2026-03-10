@@ -15,14 +15,14 @@ weight = {
 class ManageSettings:
     def __init__(self):
         self.ordering_list = []
-        work_dir = os.path.join('src', 'fast_calc')
+        work_dir = '' #os.path.join('src', 'fast_calc')
         self.read_weight(os.path.join(work_dir, 'settings_ordering.txt'))
         self.read_ordering(os.path.join(work_dir, 'settings_ordering.txt'))
 
     def clean_data(self, text : str):
         return re.sub('\s+', '\n', text).strip().split('\n')
 
-    def read_weight(self, fname):
+    def read_ordering(self, fname):
         try:
             with open(fname, 'r', encoding='utf-8') as inp:
                 lines = self.clean_data(inp.read())
@@ -31,7 +31,7 @@ class ManageSettings:
         except FileNotFoundError:
             print(f'File not found:{fname} in ', os.getcwd())
 
-    def read_ordering(self, fname):
+    def read_weight(self, fname):
         pass
 
 
