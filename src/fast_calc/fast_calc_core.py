@@ -4,6 +4,7 @@ from os import getcwd
 import re
 from item_data import weight, ManageSettings
 import time
+from pprint import pprint
 
 class FastTabCalcError(Exception):
     def __init__(self, m):
@@ -58,7 +59,9 @@ class FastTabCalc:
         return clean_text_lines
 
     def list_indents(self, clean_text_lines):
-        return [[len(s)-len(s.lstrip('\t')), s.lstrip('\t')] for s in clean_text_lines]
+        x = list([len(s)-len(s.lstrip('\t')) + 1, s.lstrip('\t')] for s in clean_text_lines)
+        x.insert(0, [0, 'root'])
+        return x
 
     def expand_tree(self, lines):
         family = [lines[0].copy()]

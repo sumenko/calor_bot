@@ -101,7 +101,7 @@ class App:
         # Средний фрейм с кнопкой (фиксированная ширина)
         mid = tk.Frame(container, width=80)
         mid.grid(row=0, column=1, sticky="ns")
-        tk.Button(mid, text="▶ Run\n(F5)", command=self.run_calculation, width=8, height=4).pack(pady=20)
+        tk.Button(mid, text="▶ Run\n(F5)", command=self.run_calculation, width=8, height=4).pack(pady=30,padx=30)
 
         # Правый фрейм
         right_frame = tk.Frame(container)
@@ -390,8 +390,10 @@ class App:
         else:
             self.document_changed = False
             sym = ''
-        
-        self.root.title(self.current_file + ' ' + sym)
+            if not self.current_file:
+                self.current_file = 'New'
+            self.root.title(self.current_file + ' ' + sym)
+
     
     def _get_selected_lines(self, widget):
         try:
@@ -517,7 +519,7 @@ class App:
             return text
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
-        return None
+        return "empty"
 
     def default_data(self):
         default_text = ''
